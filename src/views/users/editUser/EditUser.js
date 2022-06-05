@@ -14,12 +14,6 @@ import {
   CFormLabel,
   CSpinner,
   CAlert,
-  CFormTextarea,
-  CFormSwitch,
-  CTooltip,
-  CListGroup,
-  CListGroupItem,
-  CFormCheck,
   CCollapse,
   CContainer,
 } from '@coreui/react';
@@ -30,16 +24,10 @@ import {
   cilArrowCircleLeft,
   cilCheckCircle,
   cilWarning,
-  cilFactory,
-  cilLocationPin,
-  cilPhone,
-  cilPowerStandby,
-  cilCalendar,
-  cilBriefcase,
   cilSave,
   cilLockLocked,
 } from '@coreui/icons';
-import { cilInfoCircle, cilKey } from '@coreui/icons-pro';
+import { cilKey } from '@coreui/icons-pro';
 import Validation from '../../../components/validation/Validation';
 import { useHistory, useLocation } from 'react-router-dom';
 
@@ -73,13 +61,14 @@ const EditUser = () => {
   //Para mostrar las alertas del formulario, de éxito y error dependiendo el tipo
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState(false);
-  const [alertMensaje, setAlertMensaje] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
 
   //API for edit user
   const editUser = (e) => {
     setLoadingSubmitButton(true);
     e.preventDefault();
     const data = {
+      id_use_session: localStorage.getItem('id_use'),
       name_use: e.target.name_use.value,
       email_use: e.target.email_use.value,
       id_rol: e.target.id_rol.value,
@@ -88,7 +77,6 @@ const EditUser = () => {
       id_use: e.target.id_use.value,
     };
 
-    //API para actualizar usuario
     fetch(`http://localhost:5000/editUser`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/JSON' },
@@ -97,28 +85,28 @@ const EditUser = () => {
       .then((resp) => resp.json())
       .then((resp) => {
         if (resp.result) {
-          //Mostrar alerta
+          //Show alert
           setShowAlert(true);
           setAlertType(true);
-          setAlertMensaje(resp.message);
+          setAlertMessage(resp.message);
           window.scrollTo(0, 0);
-          //Volver a la tabla de empresas despues de un tiempo determinado
+          //return to dashbord before specific time
           setTimeout(() => {
             history.push('/');
-          }, 2500);
+          }, 2000);
         } else {
-          //Mostrar alerta
+          //Show alert
           setShowAlert(true);
           setAlertType(false);
-          setAlertMensaje(resp.message);
+          setAlertMessage(resp.message);
           window.scrollTo(0, 0);
         }
         setLoadingSubmitButton(false);
       })
       .catch((e) => {
         console.warn(e);
-        // localStorage.clear();
-        // history.push('/login');
+        localStorage.clear();
+        history.push('/login');
       });
   };
 
@@ -148,7 +136,7 @@ const EditUser = () => {
           } else {
             setShowAlert(true);
             setAlertType(false);
-            setAlertMensaje(resp.message);
+            setAlertMessage(resp.message);
             window.scrollTo(0, 0);
           }
         })
@@ -186,7 +174,7 @@ const EditUser = () => {
                   width={24}
                   height={24}
                 />
-                <div>{alertMensaje}</div>
+                <div>{alertMessage}</div>
               </CAlert>
               <CRow>
                 {/* Title */}
@@ -248,8 +236,12 @@ const EditUser = () => {
                       </CInputGroupText>
                       <CFormSelect
                         name='id_rol'
-                        defaultValue={user.name_rol}
-                        disabled={user.name_rol == 'user' ? true : false}
+                        defaultValue={user.id_rol}
+                        disabled={
+                          localStorage.getItem('name_rol') == 'user'
+                            ? true
+                            : false
+                        }
                       >
                         {roles != null &&
                           roles.map((a) => (
@@ -262,7 +254,7 @@ const EditUser = () => {
                   </CCol>
                 </CRow>
 
-                {/* Boton para abrir el collapse de cambiar contraseña */}
+                {/* For open inputs of passwords */}
                 <CRow className='mb-3'>
                   <CCol sm={12}>
                     <div className='d-grid gap-2'>
@@ -347,7 +339,7 @@ const EditUser = () => {
                   >
                     {loadingSubmitButton ? (
                       <>
-                        <CSpinner size='sm' color='light' /> Cargando...
+                        <CSpinner size='sm' color='light' /> Loading...
                       </>
                     ) : (
                       <>

@@ -4,7 +4,6 @@ import {
   CCard,
   CCardHeader,
   CCardBody,
-  CCardText,
   CButton,
   CModal,
   CModalHeader,
@@ -14,13 +13,18 @@ import {
   CRow,
   CCol,
   CSpinner,
-  CFormInput,
-  CInputGroup,
-  CInputGroupText,
+  CAlert,
 } from '@coreui/react';
 import { CSmartTable } from '@coreui/react-pro';
 import CIcon from '@coreui/icons-react';
-import { cilAccountLogout, cilPencil, cilTrash } from '@coreui/icons';
+import {
+  cilAccountLogout,
+  cilCheckCircle,
+  cilPencil,
+  cilTrash,
+  cilWarning,
+  cilX,
+} from '@coreui/icons';
 import { useHistory } from 'react-router-dom';
 import Validation from '../../components/validation/Validation';
 
@@ -34,7 +38,15 @@ function Dashboard() {
   const [loadingTable, setLoadingTable] = useState(true);
 
   //For show modal
-  const [showModalDistances, setShowModalDistances] = useState(false);
+  const [showModalDelete, setShowModalDelete] = useState(false);
+  const [idUserDelete, setIdUserDelete] = useState();
+  const [nameUserDelete, setNameUserDelete] = useState();
+  const [emailUserDelete, setEmailUserDelete] = useState();
+
+  //Para mostrar las alertas del formulario, de éxito y error dependiendo el tipo
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertType, setAlertType] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   //columns of table restaurants
   const columnsTUsers = [
@@ -64,6 +76,54 @@ function Dashboard() {
       _props: { colSpan: 3 },
     },
   ];
+
+  const showModalDeleteUser = (id, name, email) => {
+    setIdUserDelete(id);
+    setNameUserDelete(name);
+    setEmailUserDelete(email);
+
+    setShowModalDelete(true);
+  };
+
+  //API for delete user
+  const deleteUser = (id) => {
+    setShowModalDelete(false);
+
+    const data = {
+      id_use_session: localStorage.getItem('id_use'),
+      id_use: id,
+    };
+
+    fetch(`http://localhost:5000/deleteUser`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/JSON' },
+      body: JSON.stringify(data),
+    })
+      .then((resp) => resp.json())
+      .then((resp) => {
+        if (resp.result) {
+          setShowAlert(true);
+          setAlertType(true);
+          setAlertMessage(resp.message);
+          window.scrollTo(0, 0);
+          getUsers();
+        } else {
+          setShowAlert(true);
+          setAlertType(false);
+          setAlertMessage(resp.message);
+          window.scrollTo(0, 0);
+        }
+        setShowModalDelete(false);
+        setTimeout(() => {
+          setShowAlert(false);
+        }, 5000);
+      })
+      .catch((e) => {
+        console.warn(e);
+        localStorage.clear();
+        history.push('/login');
+      });
+  };
 
   //API for edit user
   const editUser = (id_use) => {
@@ -104,6 +164,21 @@ function Dashboard() {
             </CRow>
           ) : (
             <CRow className='mb-3'>
+              {/* Alert for inform to user */}
+              <CAlert
+                color={alertType ? 'success' : 'danger'}
+                className='d-flex align-items-center'
+                visible={showAlert}
+              >
+                <CIcon
+                  icon={alertType ? cilCheckCircle : cilWarning}
+                  className='flex-shrink-0 me-2'
+                  width={24}
+                  height={24}
+                />
+                <div>{alertMessage}</div>
+              </CAlert>
+
               <CCol sm={12}>
                 <CButton
                   color='danger'
@@ -164,11 +239,11 @@ function Dashboard() {
                                     size='sm'
                                     title='Delete User'
                                     onClick={() => {
-                                      // mostrarEliminarContacto(
-                                      //   item.intidcontacto,
-                                      //   item.strnombrefiscal,
-                                      //   item.strnombrecontacto
-                                      // );
+                                      showModalDeleteUser(
+                                        item.id_use,
+                                        item.name_use,
+                                        item.email_use
+                                      );
                                     }}
                                   >
                                     <CIcon icon={cilTrash} />
@@ -213,24 +288,36 @@ function Dashboard() {
         {/* Modal for delete */}
         <CModal
           alignment='center'
-          visible={showModalDistances}
+          visible={showModalDelete}
           onClose={() => {
-            setShowModalDistances(false);
+            setShowModalDelete(false);
           }}
         >
           <CModalHeader>
-            <CModalTitle>Distance to each restaurants</CModalTitle>
+            <CModalTitle>Delete User</CModalTitle>
           </CModalHeader>
-          <CModalBody className='text-center'></CModalBody>
+          <CModalBody>
+            Are you sure you want to delete the user <b>"{nameUserDelete}"</b>{' '}
+            with the email <b>"{emailUserDelete}"</b>?
+          </CModalBody>
           <CModalFooter>
+            <CButton
+              color='danger'
+              className='text-white modalBtnConfirmacion'
+              onClick={() => {
+                deleteUser(idUserDelete);
+              }}
+            >
+              <CIcon icon={cilTrash} /> Delete
+            </CButton>
             <CButton
               color='secondary'
               className='text-white modalBtnConfirmacion'
               onClick={() => {
-                setShowModalDistances(false);
+                setShowModalDelete(false);
               }}
             >
-              Cerrar
+              <CIcon icon={cilX} /> Cerrar
             </CButton>
           </CModalFooter>
         </CModal>
